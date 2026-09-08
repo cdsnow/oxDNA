@@ -35,6 +35,6 @@ void CUDABaseThermostat::_setup_rand(int N) {
 	if(_launch_cfg.blocks.x == 0) _launch_cfg.blocks.x = 1;
 	_launch_cfg.blocks.y = _launch_cfg.blocks.z = 1;
 
-setup_curand<<<_launch_cfg.blocks, _launch_cfg.threads_per_block>>>(_d_rand_state, _seed, N);
+	setup_curand<<<_launch_cfg.blocks, _launch_cfg.threads_per_block>>>(_d_rand_state, _seed, N);
 }
 

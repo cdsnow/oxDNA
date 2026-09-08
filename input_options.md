@@ -152,14 +152,16 @@ MD options:
         kinetic energy
     DPD_zeta = <float>
         translational damping coefficient for the DPD thermostat.
-    [thermostat = no|refresh|brownian|langevin|srd]
+    [thermostat = no|refresh|brownian|langevin|langevin_c|srd]
         Select the simulation thermostat for MD simulations. 'no' means
         constant-energy simulations. 'refresh' is the Anderson thermostat.
         'brownian' is an Anderson-like thermostat that refreshes momenta of
         randomly chosen particles. 'langevin' implements a regular Langevin
-        thermostat. 'srd' is an (experimental) implementation of a stochastic
-        rotational dynamics algorithm. 'no' and 'brownian' are also available
-        on CUDA. Defaults to 'no'.
+        thermostat. 'langevin_c' enables a GPU-integrated Langevin-C style
+        update (CUDA mixed precision only, selected with backend = CUDA and
+        backend_precision = mixed). 'srd' is an (experimental) implementation
+        of a stochastic rotational dynamics algorithm. 'no' and 'brownian'
+        are also available on CUDA. Defaults to 'no'.
 
 -------------------------------------------------------------------------------
 

@@ -10,6 +10,8 @@
 
 #include "MD_CUDABackend.h"
 
+#include <curand_kernel.h>
+
 #define STR2(x) #x
 #define STR(x) STR2(x)
 
@@ -40,6 +42,13 @@ protected:
 	size_t _vec_sized = 0;
 	size_t _orient_sized = 0;
 
+	bool _use_langevin_c = false;
+	double _langevin_c_a_trans = 1.;
+	double _langevin_c_b_trans = 0.;
+	double _langevin_c_a_rot = 1.;
+	double _langevin_c_b_rot = 0.;
+	curandState *_d_langevin_c_rand_state = nullptr;
+
 	void _float4_to_LR_double4(float4 *src, LR_double4 *dest);
 	void _LR_double4_to_float4(LR_double4 *src, float4 *dest);
 	void _quat_double_to_quat_float(GPU_quat_double *src, GPU_quat *dest);
@@ -49,6 +58,7 @@ protected:
 
 	virtual void _sort_particles();
 	virtual void _rescale_positions(float4 new_Ls, float4 old_Ls);
+	bool _supports_langevin_c_integrator() const override;
 
 	virtual void _first_step();
 	virtual void _forces_second_step();
@@ -60,6 +70,7 @@ public:
 	CUDAMixedBackend();
 	virtual ~CUDAMixedBackend();
 
+	void get_settings(input_file &inp) override;
 	void init();
 
 	virtual void apply_simulation_data_changes();

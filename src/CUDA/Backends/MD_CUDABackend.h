@@ -73,6 +73,7 @@ protected:
 	virtual void _apply_barostat();
 	virtual void _forces_second_step();
 	virtual void _set_external_forces();
+	virtual bool _supports_langevin_c_integrator() const;
 
 	virtual void _thermalize();
 	virtual void _update_stress_tensor();

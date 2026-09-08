@@ -532,6 +532,10 @@ void MD_CUDABackend::_set_external_forces() {
 	CUT_CHECK_ERROR("set_external_forces");
 }
 
+bool MD_CUDABackend::_supports_langevin_c_integrator() const {
+	return false;
+}
+
 void MD_CUDABackend::_sort_particles() {
 	CUDABaseBackend::_sort_index();
 	permute_particles
@@ -621,6 +625,12 @@ void MD_CUDABackend::sim_step() {
 void MD_CUDABackend::get_settings(input_file &inp) {
 	MDBackend::get_settings(inp);
 	CUDABaseBackend::get_settings(inp);
+
+	char thermostat_type[512] = "no";
+	getInputString(&inp, "thermostat", thermostat_type, 0);
+	if(!strncmp(thermostat_type, "langevin_c", 512) && !_supports_langevin_c_integrator()) {
+		throw oxDNAException("The 'langevin_c' integrator is supported only by the CUDA mixed-precision backend (backend_precision = mixed)");
+	}
 
 	if(getInputBool(&inp, "use_edge", &_use_edge, 0) == KEY_FOUND) {
 		if(_use_edge && sizeof(c_number) == sizeof(double)) {

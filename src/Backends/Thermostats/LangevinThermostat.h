@@ -42,6 +42,18 @@ public:
 	LangevinThermostat();
 	virtual ~LangevinThermostat();
 
+	number gamma_trans() const {
+		return _gamma_trans;
+	}
+
+	number gamma_rot() const {
+		return _gamma_rot;
+	}
+
+	number dt() const {
+		return _dt;
+	}
+
 	void get_settings(input_file &inp);
 	void init();
 	void apply(std::vector<BaseParticle *> &particles, llint curr_step);

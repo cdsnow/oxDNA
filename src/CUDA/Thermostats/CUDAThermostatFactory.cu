@@ -32,6 +32,9 @@ std::shared_ptr<CUDABaseThermostat> CUDAThermostatFactory::make_thermostat(input
 	else if(!strncmp(thermostat_type, "langevin", 512)) {
 		return std::make_shared<CUDALangevinThermostat>();
 	}
+	else if(!strncmp(thermostat_type, "langevin_c", 512)) {
+		return std::make_shared<CUDANoThermostat>();
+	}
 	else if(!strncmp(thermostat_type, "srd", 512) || !strncmp(thermostat_type, "SRD", 512)) {
 		return std::make_shared<CUDASRDThermostat>(box);
 	}
