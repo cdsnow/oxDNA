@@ -1489,10 +1489,12 @@ void RNAInteraction::check_input_sanity(std::vector<BaseParticle*> &particles) {
 
 		if(_use_mbf)
 			continue;
+		// bonds between two frozen particles are never evaluated when frozen_skip_bonded_pairs is set
+		bool skip_frozen_bonded = CONFIG_INFO->skip_frozen_bonded && p->frozen;
 		// check that the distance between bonded neighbor doesn't exceed a reasonable threshold
 		number mind = model->RNA_FENE_R0 - model->RNA_FENE_DELTA;
 		number maxd = model->RNA_FENE_R0 + model->RNA_FENE_DELTA;
-		if(particles[i]->n3 != P_VIRTUAL) {
+		if(particles[i]->n3 != P_VIRTUAL && !(skip_frozen_bonded && p->n3->frozen)) {
 			BaseParticle *q = p->n3;
 			q->set_positions();
 			LR_vector rv = p->pos + p->int_centers[RNANucleotide::BACK] - (q->pos + q->int_centers[RNANucleotide::BACK]);
@@ -1501,7 +1503,7 @@ void RNAInteraction::check_input_sanity(std::vector<BaseParticle*> &particles) {
 				throw oxDNAException("Distance between bonded neighbors %d and %d exceeds acceptable values (d = %lf)", i, p->n3->index, r);
 		}
 
-		if(particles[i]->n5 != P_VIRTUAL) {
+		if(particles[i]->n5 != P_VIRTUAL && !(skip_frozen_bonded && p->n5->frozen)) {
 			BaseParticle *q = p->n5;
 			q->set_positions();
 			LR_vector rv = p->pos + p->int_centers[RNANucleotide::BACK] - (q->pos + q->int_centers[RNANucleotide::BACK]);

@@ -3,3 +3,6 @@ trajectory_*.dat
 log_*.dat
 last_conf*.dat
 frozen_results.dat
+duplex_distorted.dat
+energy_skip.dat
+trajectory_skip.dat

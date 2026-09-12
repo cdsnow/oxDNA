@@ -140,6 +140,9 @@ public:
 	/// indices of the particles that are not frozen; filled by SimBackend::_init_frozen_particles() and valid only if has_frozen_particles is true
 	std::vector<int> movable_particles;
 
+	/// if true, bonded interactions between two frozen particles are not evaluated (their energy is a constant that cannot affect the sampling)
+	bool skip_frozen_bonded = false;
+
 	input_file *sim_input = nullptr;
 };
 

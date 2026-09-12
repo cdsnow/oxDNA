@@ -14,6 +14,16 @@ Frozen particles are supported by the CPU `MD`, `MC`, `MC2`, `VMMC` and `PT_VMMC
 
 From `oxpy`, the flag is available as `BaseParticle.frozen`, and `ConfigInfo.has_frozen_particles` / `ConfigInfo.movable_particles` expose the movable set.
 
+### Frozen structures that are not at the model's minimum
+
+A frozen set is typically taken from an experimental structure, whose backbone geometry is not exactly that of the coarse-grained model: some backbone bonds between frozen particles fall outside the FENE range, where oxDNA/oxRNA return an energy of {math}`10^{12}`. Bonded energies between two frozen particles are constants that cannot affect the distribution of the movable particles, so the option
+
+```text
+frozen_skip_bonded_pairs = true
+```
+
+makes the full-system energy computations (`get_system_energy`, MD forces, the `MC` backend's energy tally, the initial topology sanity check) skip every bonded pair whose two members are frozen. Nonbonded pairs are still computed, and pairs involving at least one movable particle are always computed. Interactions between a movable particle and a frozen one are physical and must be sane: the bonds at the junctions between a frozen segment and a flexible one have to be inside the FENE range before the simulation starts. The single-particle MC moves evaluate only pairs involving the moved (hence movable) particle, so their acceptance is unaffected by the option; what changes is only the constant offset of the reported total energy. The option is refused by the `VMMC` and `PT_VMMC` backends, whose energy bookkeeping is not covered.
+
 ## What the samplers do
 
 The frozen set is read once by `SimBackend::_init_frozen_particles()`, which sets `BaseParticle::frozen` and caches the list of movable indices in `ConfigInfo::movable_particles`.
@@ -45,6 +55,7 @@ The Pivot move is a deterministic symmetric proposal (random pivot, random direc
 * exact preservation: positions and orientations of frozen particles are bit-identical after $10^6$ MC moves (`MC2` with translation, rotation, VMMC and pivot moves; `MC`; `VMMC`) and $10^5$ MD steps, while the movable particles do move; the VMMC and pivot moves are verified to be attempted and accepted;
 * energy consistency: the `VMMC` backend compares its tallied energy with a full recomputation at every step and throws on any mismatch; independently, for 400 random single-particle trial moves with frozen neighbours the local energy difference used by the moves equals the full-system energy difference to $10^{-13}$;
 * reference-sampler agreement: the `MC2` sampler with frozen particles and an independent Metropolis sampler written in Python over the movable particles (using `oxpy` energy calls only) agree on the mean potential energy and on two frozen-movable distances within statistical error (block-averaged, $z < 4$). Run `python oxpy_input.py 60000` for a ten-times longer comparison;
-* the input file is rejected if `fix_diffusion` is left enabled.
+* the input file is rejected if `fix_diffusion` is left enabled;
+* `frozen_skip_bonded_pairs`: on the undistorted duplex the skipped energy equals exactly the sum of the bonded energies of the frozen-frozen pairs; with one frozen particle displaced so that its two frozen-frozen backbone bonds are far outside the FENE range, the run starts, its energy stays finite, the frozen particles stay bit-identical and the movable particles keep moving; without the option the same input reports an energy of the order of {math}`10^{12}`.
 
 Acceptance rates are deliberately *not* compared with an unfrozen run: freezing changes the environment that is sampled, so the rates legitimately differ.

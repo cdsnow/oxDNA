@@ -253,5 +253,56 @@ with oxpy.Context(print_coda=False):
     except Exception as e:
         record("validation_fix_diffusion_rejected", "fix_diffusion" in str(e))
 
+# ---------------------------------------------------------------- frozen_skip_bonded_pairs
+# distorted configuration: frozen particle 1 displaced by 0.6 length units, which puts the frozen-frozen
+# backbone bonds 0-1 and 1-2 far outside the FENE range
+with open("duplex.dat") as f:
+    lines = f.read().splitlines()
+fields = lines[4].split()
+fields[0] = repr(float(fields[0]) + 0.6)
+lines[4] = " ".join(fields)
+with open("duplex_distorted.dat", "w") as f:
+    f.write("\n".join(lines) + "\n")
+
+
+def energy_with(conf, skip, run_steps=0):
+    with oxpy.Context(print_coda=False):
+        inp = oxpy.InputFile()
+        inp.init_from_filename("input_mc2")
+        inp["conf_file"] = conf
+        inp["frozen_skip_bonded_pairs"] = "true" if skip else "false"
+        inp["log_file"] = "log_skip.dat"
+        inp["energy_file"] = "energy_skip.dat"
+        inp["trajectory_file"] = "trajectory_skip.dat"
+        manager = oxpy.OxpyManager(inp)
+        ci = manager.config_info()
+        particles = ci.particles()
+        E = manager.system_energy()
+        frozen_bonded = 0.0
+        for p in particles:
+            if p.frozen and p.n3 is not None and p.n3.frozen:
+                frozen_bonded += ci.interaction.pair_interaction_bonded(p, p.n3)
+        before = snapshot(particles)
+        moved = None
+        if run_steps > 0:
+            manager.run(run_steps, print_output=False)
+            after = snapshot(particles)
+            frozen_ok = all(np.array_equal(before[p.index][k], after[p.index][k]) for p in particles if p.frozen for k in range(3))
+            moved = frozen_ok and all(not np.array_equal(before[p.index][0], after[p.index][0]) for p in particles if not p.frozen)
+        E_after = manager.system_energy()
+        del manager
+    return E, frozen_bonded, moved, E_after
+
+E_full, fb, _, _ = energy_with("duplex.dat", False)
+E_skip, fb2, _, _ = energy_with("duplex.dat", True)
+record("skip_bonded_energy_identity", abs((E_full - fb) - E_skip) < 1e-9 * max(1.0, abs(E_full)), "E_full=%.6f frozen-frozen bonded=%.6f E_skip=%.6f" % (E_full, fb, E_skip))
+try:
+    E_dist_full, fb_d, _, _ = energy_with("duplex_distorted.dat", False)
+    record("skip_bonded_distorted_without_option_refused_or_huge", E_dist_full > 1e11, "E=%.3e" % E_dist_full)
+except Exception as e:
+    record("skip_bonded_distorted_without_option_refused_or_huge", "bonded neighbors" in str(e), str(e))
+E_dist_skip, _, moved_ok, E_dist_after = energy_with("duplex_distorted.dat", True, run_steps=100000 // 16)
+record("skip_bonded_distorted_finite_and_frozen_preserved", abs(E_dist_skip) < 1e3 and abs(E_dist_after) < 1e3 and moved_ok, "E=%.4f -> %.4f" % (E_dist_skip, E_dist_after))
+
 with open("frozen_results.dat", "w") as f:
     f.write("\n".join(results) + "\n")

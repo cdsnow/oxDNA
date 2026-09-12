@@ -109,15 +109,22 @@ void MC_CPUBackend::init() {
 inline number MC_CPUBackend::_particle_energy(BaseParticle *p, bool reuse) {
 	number res = (number) 0.f;
 
+	bool skip_frozen_bonded = _config_info->skip_frozen_bonded;
 	if(reuse) {
 		// slightly better than a direct loop, since in this way we don't have to build
 		// ParticlePair objects every time
 		for(auto &pair : p->affected) {
+			if(skip_frozen_bonded && pair.first->frozen && pair.second->frozen) {
+				continue;
+			}
 			res += _stored_bonded_interactions[pair];
 		}
 	}
 	else {
 		for(auto &pair : p->affected) {
+			if(skip_frozen_bonded && pair.first->frozen && pair.second->frozen) {
+				continue;
+			}
 			number de = _interaction->pair_interaction_bonded(pair.first, pair.second);
 			res += de;
 			_stored_bonded_tmp[pair] = de;

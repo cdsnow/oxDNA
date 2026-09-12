@@ -172,6 +172,7 @@ void SimBackend::get_settings(input_file &inp) {
 
 	getInputString(&inp, "frozen_particles_file", _frozen_particles_file, 0);
 	getInputString(&inp, "frozen_strands", _frozen_strands, 0);
+	getInputBool(&inp, "frozen_skip_bonded_pairs", &_config_info->skip_frozen_bonded, 0);
 
 	// we only reseed the RNG if:
 	// a) we have a binary conf
@@ -334,6 +335,9 @@ void SimBackend::init() {
 	_rcut = _interaction->get_rcut();
 	_sqr_rcut = SQR(_rcut);
 
+	// frozen particles are flagged before the configuration is read, so that the interaction's sanity checks can skip them
+	_init_frozen_particles();
+
 	// check that the interaction has filled the array of "affected" particles
 	for(int i = 0; i < N; i++) {
 		BaseParticle *p = _particles[i];
@@ -406,8 +410,6 @@ void SimBackend::init() {
 	}
 
 	_interaction->set_box(_box.get());
-
-	_init_frozen_particles();
 
 	_lists->init(_rcut);
 	CONFIG_INFO->subscribe(_box->INIT_EVENT, [this]() { this->_lists->change_box(); });
@@ -845,8 +847,8 @@ void SimBackend::_init_frozen_particles() {
 		int strand_id;
 		std::set<int> frozen_strand_ids;
 		while(ss >> strand_id) {
-			if(strand_id < 0 || strand_id >= (int) _molecules.size()) {
-				throw oxDNAException("Invalid strand id %d in frozen_strands (the topology contains %u strands)", strand_id, _molecules.size());
+			if(strand_id < 0 || strand_id >= _N_strands) {
+				throw oxDNAException("Invalid strand id %d in frozen_strands (the topology contains %d strands)", strand_id, _N_strands);
 			}
 			frozen_strand_ids.insert(strand_id);
 		}
@@ -872,6 +874,9 @@ void SimBackend::_init_frozen_particles() {
 	_config_info->has_frozen_particles = (_N_frozen > 0);
 
 	if(!any_option) {
+		if(_config_info->skip_frozen_bonded) {
+			throw oxDNAException("frozen_skip_bonded_pairs requires frozen particles (frozen_particles_file or frozen_strands)");
+		}
 		return;
 	}
 
@@ -894,7 +899,11 @@ void SimBackend::_init_frozen_particles() {
 		throw oxDNAException("Frozen particles are not supported by sim_type = %s", sim_type.c_str());
 	}
 
-	OX_LOG(Logger::LOG_INFO, "Frozen particles: %d out of %d (%d movable)", _N_frozen, N(), (int) _config_info->movable_particles.size());
+	if(_config_info->skip_frozen_bonded && (sim_type == "VMMC" || sim_type == "PT_VMMC")) {
+		throw oxDNAException("frozen_skip_bonded_pairs is not supported by sim_type = %s (use MC2, MC or MD)", sim_type.c_str());
+	}
+
+	OX_LOG(Logger::LOG_INFO, "Frozen particles: %d out of %d (%d movable)%s", _N_frozen, N(), (int) _config_info->movable_particles.size(), (_config_info->skip_frozen_bonded) ? ", bonded interactions between frozen particles are skipped" : "");
 }
 
 void SimBackend::fix_diffusion() {

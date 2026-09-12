@@ -15,6 +15,10 @@ Core options:
         fix_diffusion = false. CPU MD, MC, MC2, VMMC and PT_VMMC backends only.
     [frozen_strands = <string>]
         comma-separated list of (0-based, internal) strand ids whose particles are all frozen.
+    [frozen_skip_bonded_pairs = <bool>]
+        if true, bonded interactions between two frozen particles are never
+        evaluated (their energy is a constant). Defaults to false. Not
+        supported by the VMMC and PT_VMMC backends.
         if true, particles that leave the simulation box are brought back in
         via periodic boundary conditions. Defaults to true.
     [seed = <int>]

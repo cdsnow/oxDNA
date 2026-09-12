@@ -17,3 +17,6 @@ c_reference_sampler_U PASS
 c_reference_sampler_d_interface PASS
 c_reference_sampler_d_end PASS
 validation_fix_diffusion_rejected PASS
+skip_bonded_energy_identity PASS
+skip_bonded_distorted_without_option_refused_or_huge PASS
+skip_bonded_distorted_finite_and_frozen_preserved PASS

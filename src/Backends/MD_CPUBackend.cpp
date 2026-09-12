@@ -156,9 +156,13 @@ void MD_CPUBackend::_compute_forces() {
 	}
 
 	_U = (number) 0;
+	bool skip_frozen_bonded = _config_info->skip_frozen_bonded;
 	for(auto p : _particles) {
 		for(auto &pair : p->affected) {
 			if(pair.first == p) {
+				if(skip_frozen_bonded && pair.first->frozen && pair.second->frozen) {
+					continue;
+				}
 				_U += _interaction->pair_interaction_bonded(pair.first, pair.second, true, true);
 			}
 		}

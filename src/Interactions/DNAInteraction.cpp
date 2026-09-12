@@ -1468,10 +1468,13 @@ void DNAInteraction::check_input_sanity(std::vector<BaseParticle*> &particles) {
 			continue;
 		}
 
+		// bonds between two frozen particles are never evaluated when frozen_skip_bonded_pairs is set
+		bool skip_frozen_bonded = CONFIG_INFO->skip_frozen_bonded && p->frozen;
+
 		// check that the distance between bonded neighbors doesn't exceed a reasonable threshold
 		number mind = _fene_r0 - FENE_DELTA;
 		number maxd = _fene_r0 + FENE_DELTA;
-		if(p->n3 != P_VIRTUAL) {
+		if(p->n3 != P_VIRTUAL && !(skip_frozen_bonded && p->n3->frozen)) {
 			BaseParticle *q = p->n3;
 			q->set_positions();
 			LR_vector rv = p->pos + p->int_centers[DNANucleotide::BACK] - (q->pos + q->int_centers[DNANucleotide::BACK]);
@@ -1481,7 +1484,7 @@ void DNAInteraction::check_input_sanity(std::vector<BaseParticle*> &particles) {
 			}
 		}
 
-		if(p->n5 != P_VIRTUAL) {
+		if(p->n5 != P_VIRTUAL && !(skip_frozen_bonded && p->n5->frozen)) {
 			BaseParticle *q = p->n5;
 			q->set_positions();
 			LR_vector rv = p->pos + p->int_centers[DNANucleotide::BACK] - (q->pos + q->int_centers[DNANucleotide::BACK]);
