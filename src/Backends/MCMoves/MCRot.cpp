@@ -41,11 +41,11 @@ void MCRot::init() {
 void MCRot::apply(llint curr_step) {
 	this->_attempted++;
 
-	int pi = (int) (drand48() * this->_Info->N());
+	int pi = random_movable_index();
 	BaseParticle *p = this->_Info->particles()[pi];
 	if (this->_restrict_to_type >= 0) {
 		while(p->type != this->_restrict_to_type) {
-			pi = (int) (drand48() * this->_Info->N());
+			pi = random_movable_index();
 			p = this->_Info->particles()[pi];
 		}
 	}

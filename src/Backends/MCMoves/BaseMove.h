@@ -81,6 +81,9 @@ class BaseMove {
 		/// helper function to compute the energy of each particle; internally, it calls the interaction;
 		number particle_energy (BaseParticle *p);
 
+		/// returns the index of a particle chosen uniformly at random among the non-frozen ones
+		int random_movable_index();
+
 		/// helper function to compute the system energy; internally, it calls the interaction
 		number system_energy();
 

@@ -70,6 +70,19 @@ protected:
 
 	bool _enable_fix_diffusion;
 
+	/// file listing the indices (or index ranges) of the particles that should be frozen
+	std::string _frozen_particles_file;
+	/// comma-separated list of (0-based, internal) strand ids whose particles should all be frozen
+	std::string _frozen_strands;
+	/// number of frozen particles (set by _init_frozen_particles())
+	int _N_frozen = 0;
+
+	/**
+	 * @brief Parses the frozen_particles_file and frozen_strands options, sets the frozen flag on the
+	 * corresponding particles and stores the list of movable particles in ConfigInfo.
+	 */
+	void _init_frozen_particles();
+
 	bool _external_forces;
 	std::string _external_filename;
 

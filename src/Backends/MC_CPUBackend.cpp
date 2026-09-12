@@ -98,6 +98,10 @@ void MC_CPUBackend::init() {
 		OX_LOG(Logger::LOG_INFO, "(MC_CPUBackend) Working to achieve taget_box=%g (Volume: %g), tolerance=%g, energy tolerance=%g (e/N)=%g", _target_box, pow(_target_box,3.), _box_tolerance, _e_tolerance, _e_tolerance / N());
 	}
 
+	if(_config_info->has_frozen_particles && _ensemble == MC_ENSEMBLE_NPT) {
+		throw oxDNAException("(MC_CPUBackend) The NPT ensemble rescales all positions and is incompatible with frozen particles");
+	}
+
 	_compute_energy();
 	if(_overlap == true) throw oxDNAException("(MC_CPUBackend) There is an overlap in the initial configuration");
 }
@@ -294,7 +298,7 @@ void MC_CPUBackend::sim_step() {
 		else {
 			_timer_move->resume();
 			// do normal move
-			int pi = (int) (drand48() * N());
+			int pi = (_config_info->has_frozen_particles) ? _config_info->movable_particles[(int) (drand48() * _config_info->movable_particles.size())] : (int) (drand48() * N());
 			BaseParticle *p = _particles[pi];
 
 			int move = (drand48() < (number) 0.5f) ? MC_MOVE_TRANSLATION : MC_MOVE_ROTATION;

@@ -22,6 +22,9 @@ VolumeMove::~VolumeMove() {
 
 void VolumeMove::init() {
 	BaseMove::init();
+	if(_Info->has_frozen_particles) {
+		throw oxDNAException("The VolumeMove move changes the position of every particle and is incompatible with frozen particles");
+	}
 	_pos_old.resize(_Info->N());
 	if(_restrict_to_type > 0) {
 		OX_LOG(Logger::LOG_WARNING, "(VolumeMove.cpp) Cant use VolumeMove with restrict_to_type. Ignoring");

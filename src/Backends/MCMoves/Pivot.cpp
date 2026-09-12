@@ -75,6 +75,17 @@ void Pivot::apply(llint curr_step) {
 		return;
 	}
 
+	// frozen particles: a pivot rotates every particle downstream of the pivot point, so the move is
+	// rejected (before any energy computation) if any of them is frozen. Being a criterion that depends
+	// only on the set of moved particles, it is symmetric under the reverse move and preserves detailed balance.
+	if(_Info->has_frozen_particles) {
+		for(int i = 0; i < N_in_move; i++) {
+			if(_Info->particles()[temp_particles[i].index]->frozen) {
+				return;
+			}
+		}
+	}
+
 	// compute the energy in the initial state
 	number delta_E = 0.;
 	for(int i = 0; i < N_in_move; i++) {

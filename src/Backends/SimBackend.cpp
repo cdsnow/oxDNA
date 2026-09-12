@@ -10,6 +10,11 @@
 #endif
 
 #include "SimBackend.h"
+
+#include <set>
+#include <algorithm>
+#include <sstream>
+#include <fstream>
 #include "../Utilities/Utils.h"
 #include "../Utilities/ConfigInfo.h"
 #include "../Interactions/InteractionFactory.h"
@@ -164,6 +169,9 @@ void SimBackend::get_settings(input_file &inp) {
 	}
 
 	getInputBool(&inp, "fix_diffusion", &_enable_fix_diffusion, 0);
+
+	getInputString(&inp, "frozen_particles_file", _frozen_particles_file, 0);
+	getInputString(&inp, "frozen_strands", _frozen_strands, 0);
 
 	// we only reseed the RNG if:
 	// a) we have a binary conf
@@ -398,6 +406,8 @@ void SimBackend::init() {
 	}
 
 	_interaction->set_box(_box.get());
+
+	_init_frozen_particles();
 
 	_lists->init(_rcut);
 	CONFIG_INFO->subscribe(_box->INIT_EVENT, [this]() { this->_lists->change_box(); });
@@ -783,6 +793,108 @@ void SimBackend::update_observables_data(bool force) {
 	}
 
 	_obs_timer->pause();
+}
+
+void SimBackend::_init_frozen_particles() {
+	std::vector<bool> to_freeze(N(), false);
+	bool any_option = false;
+
+	if(_frozen_particles_file.size() > 0) {
+		any_option = true;
+		std::ifstream inp(_frozen_particles_file.c_str());
+		if(!inp.good()) {
+			throw oxDNAException("Can't read frozen_particles_file '%s'", _frozen_particles_file.c_str());
+		}
+		std::string line;
+		int line_n = 0;
+		while(std::getline(inp, line)) {
+			line_n++;
+			// strip comments
+			size_t hash = line.find('#');
+			if(hash != std::string::npos) {
+				line = line.substr(0, hash);
+			}
+			std::replace(line.begin(), line.end(), ',', ' ');
+			std::istringstream ss(line);
+			std::string token;
+			while(ss >> token) {
+				int first, last;
+				size_t dash = token.find('-', 1);
+				if(dash == std::string::npos) {
+					first = last = std::atoi(token.c_str());
+				}
+				else {
+					first = std::atoi(token.substr(0, dash).c_str());
+					last = std::atoi(token.substr(dash + 1).c_str());
+				}
+				if(first < 0 || last >= N() || first > last) {
+					throw oxDNAException("Invalid particle index or range '%s' at line %d of frozen_particles_file '%s' (N = %d)", token.c_str(), line_n, _frozen_particles_file.c_str(), N());
+				}
+				for(int i = first; i <= last; i++) {
+					to_freeze[i] = true;
+				}
+			}
+		}
+	}
+
+	if(_frozen_strands.size() > 0) {
+		any_option = true;
+		std::string strands = _frozen_strands;
+		std::replace(strands.begin(), strands.end(), ',', ' ');
+		std::istringstream ss(strands);
+		int strand_id;
+		std::set<int> frozen_strand_ids;
+		while(ss >> strand_id) {
+			if(strand_id < 0 || strand_id >= (int) _molecules.size()) {
+				throw oxDNAException("Invalid strand id %d in frozen_strands (the topology contains %u strands)", strand_id, _molecules.size());
+			}
+			frozen_strand_ids.insert(strand_id);
+		}
+		for(auto p : _particles) {
+			if(frozen_strand_ids.count(p->strand_id) > 0) {
+				to_freeze[p->index] = true;
+			}
+		}
+	}
+
+	_N_frozen = 0;
+	_config_info->movable_particles.clear();
+	for(int i = 0; i < N(); i++) {
+		BaseParticle *p = _particles[i];
+		p->frozen = to_freeze[i];
+		if(p->frozen) {
+			_N_frozen++;
+		}
+		else {
+			_config_info->movable_particles.push_back(i);
+		}
+	}
+	_config_info->has_frozen_particles = (_N_frozen > 0);
+
+	if(!any_option) {
+		return;
+	}
+
+	if(_N_frozen == N()) {
+		throw oxDNAException("All %d particles are frozen: nothing to simulate", N());
+	}
+
+	if(_enable_fix_diffusion) {
+		throw oxDNAException("fix_diffusion (which defaults to true) recentres the whole system and is incompatible with frozen particles: set fix_diffusion = false in the input file");
+	}
+
+	std::string backend;
+	getInputString(_config_info->sim_input, "backend", backend, 0);
+	if(backend == "CUDA") {
+		throw oxDNAException("Frozen particles are not supported by the CUDA backend");
+	}
+	std::string sim_type("MD");
+	getInputString(_config_info->sim_input, "sim_type", sim_type, 0);
+	if(sim_type != "MD" && sim_type != "MC" && sim_type != "MC2" && sim_type != "VMMC" && sim_type != "PT_VMMC") {
+		throw oxDNAException("Frozen particles are not supported by sim_type = %s", sim_type.c_str());
+	}
+
+	OX_LOG(Logger::LOG_INFO, "Frozen particles: %d out of %d (%d movable)", _N_frozen, N(), (int) _config_info->movable_particles.size());
 }
 
 void SimBackend::fix_diffusion() {

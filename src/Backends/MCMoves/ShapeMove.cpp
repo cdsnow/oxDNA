@@ -22,6 +22,9 @@ ShapeMove::~ShapeMove () {
 
 void ShapeMove::init () {
 	BaseMove::init();
+	if(_Info->has_frozen_particles) {
+		throw oxDNAException("The ShapeMove move changes the position of every particle and is incompatible with frozen particles");
+	}
 	_pos_old.resize (_Info->N());
 	if (this->_restrict_to_type > 0) OX_LOG(Logger::LOG_WARNING, "(ShapeMove.cpp) Cant use ShapeMove with restrict_to_type. Ignoring");
 	OX_LOG(Logger::LOG_INFO, "(ShapeMove.cpp) ShapeMove initiated with T %g, delta %g, prob: %g", this->_T, _delta, this->prob);

@@ -103,6 +103,8 @@ void export_ConfigInfo(py::module &m) {
 	conf_info.def_property_readonly("temperature", &ConfigInfo::temperature, "The current simulation temperature.");
 
 	conf_info.def_readonly("current_step", &ConfigInfo::curr_step, "The current time step.");
+	conf_info.def_readonly("has_frozen_particles", &ConfigInfo::has_frozen_particles, "True if at least one particle is frozen.");
+	conf_info.def_readonly("movable_particles", &ConfigInfo::movable_particles, "The indices of the particles that are not frozen (meaningful only if has_frozen_particles is True).");
 
 	conf_info.def_readonly("box", &ConfigInfo::box, "The simulation box, which is an instance of a child class of :class:`BaseBox`.");
 

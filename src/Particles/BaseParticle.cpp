@@ -20,6 +20,7 @@ BaseParticle::BaseParticle() :
 	esn3 = (number) 0;
 	esn5 = (number) 0;
 	inclust = false;
+	frozen = false;
 	ext_potential = (number) 0.;
 	strand_id = -1;
 	//_pos_shift = LR_vector(0., 0., 0.);
@@ -51,6 +52,7 @@ void BaseParticle::copy_from(const BaseParticle &p) {
 	int_centers = p.int_centers;
 
 	ext_potential = p.ext_potential;
+	frozen = p.frozen;
 }
 
 BaseParticle::~BaseParticle() {

@@ -59,6 +59,13 @@ void BaseMove::log_parameters() {
 	OX_LOG(Logger::LOG_INFO, "\trestrict_to_type = %d", int(_restrict_to_type));
 }
 
+int BaseMove::random_movable_index() {
+	if(!_Info->has_frozen_particles) {
+		return (int) (drand48() * _Info->N());
+	}
+	return _Info->movable_particles[(int) (drand48() * _Info->movable_particles.size())];
+}
+
 number BaseMove::particle_energy(BaseParticle * p) {
 	number res = (number) 0.f;
 	typename vector<ParticlePair>::iterator it = p->affected.begin();

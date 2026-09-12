@@ -19,6 +19,9 @@ MoleculeVolumeMove::~MoleculeVolumeMove() {
 
 void MoleculeVolumeMove::init() {
 	BaseMove::init();
+	if(_Info->has_frozen_particles) {
+		throw oxDNAException("The MoleculeVolumeMove move changes the position of every particle and is incompatible with frozen particles");
+	}
 	if(_restrict_to_type > 0) {
 		OX_LOG(Logger::LOG_WARNING, "(MoleculeVolumeMove.cpp) Cant use MoleculeMoleculeVolumeMove with restrict_to_type. Ignoring");
 	}

@@ -68,6 +68,9 @@ void MD_CPUBackend::_first_step() {
 	std::vector<int> particles_with_warning;
 	LR_vector dr;
 	for(auto p : _particles) {
+		if(p->frozen) {
+			continue;
+		}
 		if(_use_builtin_langevin_thermostat) {
 			LR_vector p_plus = _langevin_c1 * p->vel + _langevin_c2 * LR_vector(Utils::gaussian(), Utils::gaussian(), Utils::gaussian());
 			LR_vector dv = p->force * (_dt * (number) 0.5);
@@ -168,6 +171,9 @@ void MD_CPUBackend::_compute_forces() {
 
 void MD_CPUBackend::_second_step() {
 	for(auto p : _particles) {
+		if(p->frozen) {
+			continue;
+		}
 		p->vel += p->force * _dt * (number) 0.5f;
 		if(_use_builtin_langevin_thermostat) {
 			p->vel = _langevin_c1 * p->vel + _langevin_c2 * LR_vector(Utils::gaussian(), Utils::gaussian(), Utils::gaussian());
@@ -213,6 +219,16 @@ void MD_CPUBackend::sim_step() {
 	_timer_thermostat->resume();
 	_thermostat->apply(_particles, current_step());
 	_timer_thermostat->pause();
+
+	// thermostats may assign velocities to all particles: frozen ones must stay still
+	if(_config_info->has_frozen_particles) {
+		for(auto p : _particles) {
+			if(p->frozen) {
+				p->vel = LR_vector(0., 0., 0.);
+				p->L = LR_vector(0., 0., 0.);
+			}
+		}
+	}
 
 	_mytimer->pause();
 }

@@ -9,6 +9,12 @@ Core options:
         or kelvin (append a k or K after the value) or celsius (append a c or
         C after the value).
     [fix_diffusion = <bool>]
+    [frozen_particles_file = <string>]
+        file listing the indices (or inclusive ranges, e.g. 0-9) of the particles
+        whose position and orientation must never change. Requires
+        fix_diffusion = false. CPU MD, MC, MC2, VMMC and PT_VMMC backends only.
+    [frozen_strands = <string>]
+        comma-separated list of (0-based, internal) strand ids whose particles are all frozen.
         if true, particles that leave the simulation box are brought back in
         via periodic boundary conditions. Defaults to true.
     [seed = <int>]

@@ -45,6 +45,9 @@ public:
 	number en3, en5, esn3, esn5;
 	bool inclust;
 
+	/// if true the particle is frozen: no MC move or MD integration step may change its position or orientation
+	bool frozen;
+
 	void init();
 
 	int get_index() const;

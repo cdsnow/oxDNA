@@ -592,7 +592,7 @@ inline number VMMC_CPUBackend::build_cluster_small(movestr *moveptr, int maxsize
 
 					E_qq_moved = _particle_particle_bonded_interaction_n3_VMMC(_particles_old[pp->index], qq);
 					test2 = VMMC_link(E_qq_moved, E_old);
-					if((test2 / test1) > _next_rand()) {
+					if(!qq->frozen && (test2 / test1) > _next_rand()) {
 						//we did full_link, qq goes in the cluster
 						//printf ("recruited %d ... @@@\n", qq->index);
 						clust[nclust] = qq->index;
@@ -631,7 +631,7 @@ inline number VMMC_CPUBackend::build_cluster_small(movestr *moveptr, int maxsize
 					E_qq_moved = _particle_particle_bonded_interaction_n3_VMMC(qq, _particles_old[pp->index]);
 
 					test2 = VMMC_link(E_qq_moved, E_old);
-					if((test2 / test1) > _next_rand()) {
+					if(!qq->frozen && (test2 / test1) > _next_rand()) {
 						//we did full_link, qq goes to cluster
 						clust[nclust] = qq->index;
 						qq->inclust = true;
@@ -673,7 +673,7 @@ inline number VMMC_CPUBackend::build_cluster_small(movestr *moveptr, int maxsize
 					E_qq_moved = _particle_particle_nonbonded_interaction_VMMC(_particles_old[pp->index], qq);
 
 					test2 = VMMC_link(E_qq_moved, E_old);
-					if((test2 / test1) > _next_rand()) {
+					if(!qq->frozen && (test2 / test1) > _next_rand()) {
 						clust[nclust] = qq->index;
 						qq->inclust = true;
 						nclust++;
@@ -930,7 +930,7 @@ inline number VMMC_CPUBackend::build_cluster_cells(movestr *moveptr, int maxsize
 					//_move_particle(moveptr, pp);
 
 					test2 = VMMC_link(E_qq_moved, E_old);
-					if(_overlap || (test2 / test1) > _next_rand()) {
+					if(!qq->frozen && (_overlap || (test2 / test1) > _next_rand())) {
 						//we did full_link, qq goes in the cluster
 
 						// in case E_qq_moved created an overlap
@@ -941,7 +941,8 @@ inline number VMMC_CPUBackend::build_cluster_cells(movestr *moveptr, int maxsize
 						nclust++;
 					}
 					else {
-						assert(_overlap == false);
+						// _overlap can be true here only if qq is frozen (the moved cluster overlaps a frozen particle): qq stays prelinked and the move is rejected
+						_overlap = false;
 						//_r_move_particle(moveptr, qq);
 						restore_particle(qq);
 						prelinked_particles.insert(qq->index);
@@ -986,7 +987,7 @@ inline number VMMC_CPUBackend::build_cluster_cells(movestr *moveptr, int maxsize
 					E_qq_moved = _particle_particle_bonded_interaction_n3_VMMC(qq, _particles_old[pp->index]);
 
 					test2 = VMMC_link(E_qq_moved, E_old);
-					if(_overlap || (test2 / test1) > _next_rand()) {
+					if(!qq->frozen && (_overlap || (test2 / test1) > _next_rand())) {
 						//we did full_link, qq goes to cluster
 						_overlap = false;
 						clust[nclust] = qq->index;
@@ -994,7 +995,8 @@ inline number VMMC_CPUBackend::build_cluster_cells(movestr *moveptr, int maxsize
 						nclust++;
 					}
 					else {
-						assert(_overlap == false);
+						// _overlap can be true here only if qq is frozen (the moved cluster overlaps a frozen particle): qq stays prelinked and the move is rejected
+						_overlap = false;
 						prelinked_particles.insert(qq->index);
 						//_r_move_particle(moveptr, qq);
 						restore_particle(qq);
@@ -1054,7 +1056,7 @@ inline number VMMC_CPUBackend::build_cluster_cells(movestr *moveptr, int maxsize
 						E_qq_moved = _particle_particle_nonbonded_interaction_VMMC(_particles_old[pp->index], qq);
 
 						test2 = VMMC_link(E_qq_moved, E_old);
-						if((test2 / test1) > _next_rand()) {
+						if(!qq->frozen && (test2 / test1) > _next_rand()) {
 							clust[nclust] = qq->index;
 							qq->inclust = true;
 							nclust++;
@@ -1380,8 +1382,8 @@ void VMMC_CPUBackend::sim_step() {
 				}
 		_dU_stack = 0.;
 
-		// seed particle;
-		int pi = (int) (drand48() * N());
+		// seed particle (never a frozen one);
+		int pi = (_config_info->has_frozen_particles) ? _config_info->movable_particles[(int) (drand48() * _config_info->movable_particles.size())] : (int) (drand48() * N());
 
 		// select the move
 		movestr move;

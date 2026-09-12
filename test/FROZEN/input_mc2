@@ -1,0 +1,44 @@
+backend = CPU
+interaction_type = RNA2
+salt_concentration = 1.0
+sim_type = MC2
+ensemble = NVT
+list_type = cells
+steps = 1000
+T = 37C
+verlet_skin = 1.0
+fix_diffusion = false
+frozen_particles_file = frozen.txt
+move_1 = {
+  type = translation
+  delta = 0.1
+  prob = 1.0
+}
+move_2 = {
+  type = rotation
+  delta = 0.2
+  prob = 1.0
+}
+move_3 = {
+  type = VMMC
+  delta_tras = 0.1
+  delta_rot = 0.2
+  max_cluster_size = 8
+  prob = 0.5
+}
+move_4 = {
+  type = pivot
+  delta = 0.3
+  prob = 0.5
+}
+topology = duplex.top
+conf_file = duplex.dat
+trajectory_file = trajectory_mc2.dat
+energy_file = energy_mc2.dat
+log_file = log_mc2.dat
+no_stdout_energy = true
+restart_step_counter = true
+print_conf_interval = 1000
+print_energy_every = 100
+time_scale = linear
+external_forces = false

@@ -218,7 +218,12 @@ number VMMC::build_cluster (movestr * moveptr, int maxsize) {
 			if (p2 > (number)1.f) p2 = (number) 1.f;
 
 			if (force_prelink || (p2 / p1) > this->_next_rand()) {
-				// particle qq recruited
+				// particle qq recruited. If it is frozen the whole move is rejected: the cluster would contain
+				// a frozen particle, and this criterion depends only on the cluster itself, so it is the same for
+				// the forward and the reverse move (see the "frozen particles" design note).
+				if(qq->frozen) {
+					return (number) 0.;
+				}
 				qq->inclust = true;
 				_clust.push_back(qq->index);
 				nclust ++;
@@ -292,7 +297,7 @@ void VMMC::apply (llint curr_step) {
 	if (_clust.size() > 0) _clust.clear();
 
 	// generate the move
-	int pi = (int) (drand48() * _Info->N());
+	int pi = random_movable_index();
 	BaseParticle *p = this->_Info->particles()[pi];
 	movestr move;
 	move.seed = pi;

@@ -98,6 +98,11 @@ void MDBackend::init() {
 	if(_refresh_velocities) _generate_vel();
 	else {
 		for(auto p: _particles) {
+			if(p->frozen) {
+				p->vel = LR_vector(0., 0., 0.);
+				p->L = LR_vector(0., 0., 0.);
+				continue;
+			}
 			if(p->L.module() < 1.e-10) {
 				throw oxDNAException("Particle %i has 0 angular momentum in initial configuration.\n\tset \"refresh_vel = true\" in input file. Aborting now.", p->index);
 			}
@@ -127,13 +132,19 @@ bool MDBackend::_is_barostat_active() {
 
 void MDBackend::_reset_momentum() {
 	LR_vector com_v(0, 0, 0);
+	int N_movable = 0;
 	for(auto p: _particles) {
-		com_v += p->vel;
+		if(!p->frozen) {
+			com_v += p->vel;
+			N_movable++;
+		}
 	}
-	com_v /= N();
+	com_v /= N_movable;
 
 	for(auto p: _particles) {
-		p->vel -= com_v;
+		if(!p->frozen) {
+			p->vel -= com_v;
+		}
 	}
 }
 
@@ -143,6 +154,11 @@ void MDBackend::_generate_vel() {
 	number rescale_factor = sqrt(this->_T);
 	number initial_K = 0;
 	for(auto p: _particles) {
+		if(p->frozen) {
+			p->vel = LR_vector(0., 0., 0.);
+			p->L = LR_vector(0., 0., 0.);
+			continue;
+		}
 
 		p->vel.x = Utils::gaussian() * rescale_factor;
 		p->vel.y = Utils::gaussian() * rescale_factor;

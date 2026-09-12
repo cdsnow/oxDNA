@@ -45,11 +45,21 @@ void export_BaseParticle(py::module &m) {
 	particle.def_readwrite("strand_id", &BaseParticle::strand_id, R"pbdoc(
 		The id of the strand to which the particle belongs.
 	)pbdoc");
+	particle.def_readwrite("frozen", &BaseParticle::frozen, R"pbdoc(
+		If True the particle is frozen: MC moves and MD integration steps never change its position or orientation.
+		Set through the ``frozen_particles_file`` and ``frozen_strands`` input options.
+	)pbdoc");
 	particle.def_readwrite("pos", &BaseParticle::pos, R"pbdoc(
 		The position of the particle.
 	)pbdoc");
 	particle.def_readwrite("orientation", &BaseParticle::orientation, R"pbdoc(
 		The orientation of the particle as a 3x3 matrix.
+	)pbdoc");
+	particle.def_readwrite("orientationT", &BaseParticle::orientationT, R"pbdoc(
+		The transpose of the orientation matrix. It must be kept in sync with :attr:`orientation` (see :meth:`set_positions`).
+	)pbdoc");
+	particle.def("set_positions", &BaseParticle::set_positions, R"pbdoc(
+		Recompute the positions of the interaction centres from the current :attr:`orientation`. Call it after changing the orientation of a particle from Python.
 	)pbdoc");
 	particle.def_readwrite("vel", &BaseParticle::vel, R"pbdoc(
 		The velocity of the particle.

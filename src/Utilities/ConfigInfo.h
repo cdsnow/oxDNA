@@ -134,6 +134,12 @@ public:
 	/// Current simulation step
 	long long int curr_step = 0;
 
+	/// true if at least one particle has its frozen flag set (see SimBackend::_init_frozen_particles())
+	bool has_frozen_particles = false;
+
+	/// indices of the particles that are not frozen; filled by SimBackend::_init_frozen_particles() and valid only if has_frozen_particles is true
+	std::vector<int> movable_particles;
+
 	input_file *sim_input = nullptr;
 };
 
