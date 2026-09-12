@@ -173,6 +173,7 @@ void SimBackend::get_settings(input_file &inp) {
 	getInputString(&inp, "frozen_particles_file", _frozen_particles_file, 0);
 	getInputString(&inp, "frozen_strands", _frozen_strands, 0);
 	getInputBool(&inp, "frozen_skip_bonded_pairs", &_config_info->skip_frozen_bonded, 0);
+	getInputBool(&inp, "frozen_skip_nonbonded_pairs", &_config_info->skip_frozen_nonbonded, 0);
 
 	// we only reseed the RNG if:
 	// a) we have a binary conf
@@ -874,8 +875,8 @@ void SimBackend::_init_frozen_particles() {
 	_config_info->has_frozen_particles = (_N_frozen > 0);
 
 	if(!any_option) {
-		if(_config_info->skip_frozen_bonded) {
-			throw oxDNAException("frozen_skip_bonded_pairs requires frozen particles (frozen_particles_file or frozen_strands)");
+		if(_config_info->skip_frozen_bonded || _config_info->skip_frozen_nonbonded) {
+			throw oxDNAException("frozen_skip_bonded_pairs and frozen_skip_nonbonded_pairs require frozen particles (frozen_particles_file or frozen_strands)");
 		}
 		return;
 	}
@@ -899,11 +900,13 @@ void SimBackend::_init_frozen_particles() {
 		throw oxDNAException("Frozen particles are not supported by sim_type = %s", sim_type.c_str());
 	}
 
-	if(_config_info->skip_frozen_bonded && (sim_type == "VMMC" || sim_type == "PT_VMMC")) {
-		throw oxDNAException("frozen_skip_bonded_pairs is not supported by sim_type = %s (use MC2, MC or MD)", sim_type.c_str());
+	if((_config_info->skip_frozen_bonded || _config_info->skip_frozen_nonbonded) && (sim_type == "VMMC" || sim_type == "PT_VMMC")) {
+		throw oxDNAException("frozen_skip_bonded_pairs and frozen_skip_nonbonded_pairs are not supported by sim_type = %s (use MC2, MC or MD)", sim_type.c_str());
 	}
 
-	OX_LOG(Logger::LOG_INFO, "Frozen particles: %d out of %d (%d movable)%s", _N_frozen, N(), (int) _config_info->movable_particles.size(), (_config_info->skip_frozen_bonded) ? ", bonded interactions between frozen particles are skipped" : "");
+	OX_LOG(Logger::LOG_INFO, "Frozen particles: %d out of %d (%d movable)%s%s", _N_frozen, N(), (int) _config_info->movable_particles.size(),
+			(_config_info->skip_frozen_bonded) ? ", bonded interactions between frozen particles are skipped" : "",
+			(_config_info->skip_frozen_nonbonded) ? ", nonbonded interactions between frozen particles are skipped" : "");
 }
 
 void SimBackend::fix_diffusion() {

@@ -265,12 +265,13 @@ with open("duplex_distorted.dat", "w") as f:
     f.write("\n".join(lines) + "\n")
 
 
-def energy_with(conf, skip, run_steps=0):
+def energy_with(conf, skip, run_steps=0, skip_nonbonded=False):
     with oxpy.Context(print_coda=False):
         inp = oxpy.InputFile()
         inp.init_from_filename("input_mc2")
         inp["conf_file"] = conf
         inp["frozen_skip_bonded_pairs"] = "true" if skip else "false"
+        inp["frozen_skip_nonbonded_pairs"] = "true" if skip_nonbonded else "false"
         inp["log_file"] = "log_skip.dat"
         inp["energy_file"] = "energy_skip.dat"
         inp["trajectory_file"] = "trajectory_skip.dat"
@@ -282,6 +283,12 @@ def energy_with(conf, skip, run_steps=0):
         for p in particles:
             if p.frozen and p.n3 is not None and p.n3.frozen:
                 frozen_bonded += ci.interaction.pair_interaction_bonded(p, p.n3)
+        if skip_nonbonded:
+            # add the nonbonded frozen-frozen energy so that the identity test can use the same quantity
+            for p in particles:
+                for q in particles:
+                    if p.index < q.index and p.frozen and q.frozen and not p.is_bonded(q):
+                        frozen_bonded += ci.interaction.pair_interaction_nonbonded(p, q)
         before = snapshot(particles)
         moved = None
         if run_steps > 0:
@@ -301,6 +308,8 @@ try:
     record("skip_bonded_distorted_without_option_refused_or_huge", E_dist_full > 1e11, "E=%.3e" % E_dist_full)
 except Exception as e:
     record("skip_bonded_distorted_without_option_refused_or_huge", "bonded neighbors" in str(e), str(e))
+E_skip2, fb3, _, _ = energy_with("duplex.dat", True, skip_nonbonded=True)
+record("skip_nonbonded_energy_identity", abs((E_full - fb3) - E_skip2) < 1e-9 * max(1.0, abs(E_full)), "E_full=%.6f frozen-frozen all=%.6f E_skip=%.6f" % (E_full, fb3, E_skip2))
 E_dist_skip, _, moved_ok, E_dist_after = energy_with("duplex_distorted.dat", True, run_steps=100000 // 16)
 record("skip_bonded_distorted_finite_and_frozen_preserved", abs(E_dist_skip) < 1e3 and abs(E_dist_after) < 1e3 and moved_ok, "E=%.4f -> %.4f" % (E_dist_skip, E_dist_after))
 

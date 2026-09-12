@@ -19,6 +19,8 @@ Core options:
         if true, bonded interactions between two frozen particles are never
         evaluated (their energy is a constant). Defaults to false. Not
         supported by the VMMC and PT_VMMC backends.
+    [frozen_skip_nonbonded_pairs = <bool>]
+        same for the nonbonded interactions between two frozen particles.
         if true, particles that leave the simulation box are brought back in
         via periodic boundary conditions. Defaults to true.
     [seed = <int>]

@@ -137,8 +137,12 @@ inline number MC_CPUBackend::_particle_energy(BaseParticle *p, bool reuse) {
 	}
 
 	std::vector<BaseParticle *> neighs = _lists->get_neigh_list(p);
+	bool skip_frozen_nonbonded = _config_info->skip_frozen_nonbonded && p->frozen;
 	for(unsigned int n = 0; n < neighs.size(); n++) {
 		BaseParticle *q = neighs[n];
+		if(skip_frozen_nonbonded && q->frozen) {
+			continue;
+		}
 		res += _interaction->pair_interaction_nonbonded(p, q);
 		if(_interaction->get_is_infinite() == true) {
 			_overlap = true;

@@ -157,6 +157,7 @@ void MD_CPUBackend::_compute_forces() {
 
 	_U = (number) 0;
 	bool skip_frozen_bonded = _config_info->skip_frozen_bonded;
+	bool skip_frozen_nonbonded = _config_info->skip_frozen_nonbonded;
 	for(auto p : _particles) {
 		for(auto &pair : p->affected) {
 			if(pair.first == p) {
@@ -168,6 +169,9 @@ void MD_CPUBackend::_compute_forces() {
 		}
 
 		for(auto q : _lists->get_neigh_list(p)) {
+			if(skip_frozen_nonbonded && p->frozen && q->frozen) {
+				continue;
+			}
 			_U += _interaction->pair_interaction_nonbonded(p, q, true, true);
 		}
 	}

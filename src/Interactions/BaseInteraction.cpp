@@ -392,11 +392,15 @@ number BaseInteraction::get_system_energy(std::vector<BaseParticle *> &particles
 	double energy = 0.;
 	std::vector<ParticlePair> pairs = lists->get_potential_interactions();
 	bool skip_frozen_bonded = CONFIG_INFO->skip_frozen_bonded;
+	bool skip_frozen_nonbonded = CONFIG_INFO->skip_frozen_nonbonded;
 	for(auto &pair : pairs) {
 		BaseParticle *p = pair.first;
 		BaseParticle *q = pair.second;
-		if(skip_frozen_bonded && p->frozen && q->frozen && p->is_bonded(q)) {
-			continue;
+		if(p->frozen && q->frozen && (skip_frozen_bonded || skip_frozen_nonbonded)) {
+			bool bonded = p->is_bonded(q);
+			if((bonded && skip_frozen_bonded) || (!bonded && skip_frozen_nonbonded)) {
+				continue;
+			}
 		}
 		energy += (double) pair_interaction(p, q);
 		if(get_is_infinite()) {
@@ -412,13 +416,17 @@ number BaseInteraction::get_system_energy_term(int name, std::vector<BaseParticl
 
 	number energy = (number) 0.f;
 	bool skip_frozen_bonded = CONFIG_INFO->skip_frozen_bonded;
+	bool skip_frozen_nonbonded = CONFIG_INFO->skip_frozen_nonbonded;
 	for(auto p : particles) {
 		std::vector<BaseParticle *> neighs = lists->get_all_neighbours(p);
 
 		for(unsigned int n = 0; n < neighs.size(); n++) {
 			BaseParticle *q = neighs[n];
-			if(skip_frozen_bonded && p->frozen && q->frozen && p->is_bonded(q)) {
-				continue;
+			if(p->frozen && q->frozen && (skip_frozen_bonded || skip_frozen_nonbonded)) {
+				bool bonded = p->is_bonded(q);
+				if((bonded && skip_frozen_bonded) || (!bonded && skip_frozen_nonbonded)) {
+					continue;
+				}
 			}
 			if(p->index > q->index) energy += pair_interaction_term(name, p, q);
 			if(get_is_infinite()) return energy;

@@ -143,6 +143,9 @@ public:
 	/// if true, bonded interactions between two frozen particles are not evaluated (their energy is a constant that cannot affect the sampling)
 	bool skip_frozen_bonded = false;
 
+	/// if true, nonbonded interactions between two frozen particles are not evaluated either
+	bool skip_frozen_nonbonded = false;
+
 	input_file *sim_input = nullptr;
 };
 
