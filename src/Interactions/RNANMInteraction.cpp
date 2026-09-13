@@ -11,6 +11,7 @@
 
 
 #include "RNANMInteraction.h"
+#include "../Utilities/ConfigInfo.h"
 
 #include "../Particles/RNANucleotide.h"
 #include "../Particles/ANMParticle.h"
@@ -404,6 +405,22 @@ number RNANMInteraction::pair_interaction_nonbonded(BaseParticle *p, BaseParticl
 
 
 number RNANMInteraction::_protein_rna_exc_volume(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces) {
+    number scale = CONFIG_INFO->frozen_exc_volume_scale;
+    if(scale == 1. || p->frozen == q->frozen) {
+        return _protein_rna_exc_volume_raw(p, q, compute_r, update_forces);
+    }
+    LR_vector fp = p->force, fq = q->force, tp = p->torque, tq = q->torque;
+    number energy = scale * _protein_rna_exc_volume_raw(p, q, compute_r, update_forces);
+    if(update_forces) {
+        p->force = fp + scale * (p->force - fp);
+        q->force = fq + scale * (q->force - fq);
+        p->torque = tp + scale * (p->torque - tp);
+        q->torque = tq + scale * (q->torque - tq);
+    }
+    return energy;
+}
+
+number RNANMInteraction::_protein_rna_exc_volume_raw(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces) {
     BaseParticle *protein;
     BaseParticle *nuc;
 

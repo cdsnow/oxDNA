@@ -35,6 +35,8 @@ protected:
 	virtual number _stacking(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces);
 
 	virtual number _nonbonded_excluded_volume(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces);
+	/// the unscaled term; _nonbonded_excluded_volume applies frozen_exc_volume_scale to frozen-movable pairs
+	number _nonbonded_excluded_volume_raw(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces);
 	virtual number _hydrogen_bonding(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces);
 	virtual number _cross_stacking(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces);
 	virtual number _coaxial_stacking(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces);

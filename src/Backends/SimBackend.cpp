@@ -174,6 +174,10 @@ void SimBackend::get_settings(input_file &inp) {
 	getInputString(&inp, "frozen_strands", _frozen_strands, 0);
 	getInputBool(&inp, "frozen_skip_bonded_pairs", &_config_info->skip_frozen_bonded, 0);
 	getInputBool(&inp, "frozen_skip_nonbonded_pairs", &_config_info->skip_frozen_nonbonded, 0);
+	getInputNumber(&inp, "frozen_exc_volume_scale", &_config_info->frozen_exc_volume_scale, 0);
+	if(_config_info->frozen_exc_volume_scale < 0.) {
+		throw oxDNAException("frozen_exc_volume_scale must be >= 0");
+	}
 
 	// we only reseed the RNG if:
 	// a) we have a binary conf
@@ -907,6 +911,9 @@ void SimBackend::_init_frozen_particles() {
 	OX_LOG(Logger::LOG_INFO, "Frozen particles: %d out of %d (%d movable)%s%s", _N_frozen, N(), (int) _config_info->movable_particles.size(),
 			(_config_info->skip_frozen_bonded) ? ", bonded interactions between frozen particles are skipped" : "",
 			(_config_info->skip_frozen_nonbonded) ? ", nonbonded interactions between frozen particles are skipped" : "");
+	if(_config_info->frozen_exc_volume_scale != 1.) {
+		OX_LOG(Logger::LOG_WARNING, "frozen_exc_volume_scale = %g: the excluded volume between frozen and movable particles is scaled. This is NOT the model: use it only to prepare initial configurations", _config_info->frozen_exc_volume_scale);
+	}
 }
 
 void SimBackend::fix_diffusion() {

@@ -313,5 +313,44 @@ record("skip_nonbonded_energy_identity", abs((E_full - fb3) - E_skip2) < 1e-9 * 
 E_dist_skip, _, moved_ok, E_dist_after = energy_with("duplex_distorted.dat", True, run_steps=100000 // 16)
 record("skip_bonded_distorted_finite_and_frozen_preserved", abs(E_dist_skip) < 1e3 and abs(E_dist_after) < 1e3 and moved_ok, "E=%.4f -> %.4f" % (E_dist_skip, E_dist_after))
 
+# ---------------------------------------------------------------- frozen_exc_volume_scale
+# configuration with a movable nucleotide (4) pushed onto its frozen neighbour (3): frozen-movable excluded volume > 0
+with open("duplex.dat") as f:
+    lines = f.read().splitlines()
+p3 = [float(x) for x in lines[3 + 3].split()[:3]]
+f4 = lines[3 + 4].split()
+f4[0:3] = [repr(p3[0] + 0.35), repr(p3[1]), repr(p3[2])]
+lines[3 + 4] = " ".join(f4)
+with open("duplex_overlap.dat", "w") as f:
+    f.write("\n".join(lines) + "\n")
+
+
+def excvol_energies(scale):
+    """system energy and the sum of the nonbonded excluded-volume term (id 3) over frozen-movable pairs"""
+    with oxpy.Context(print_coda=False):
+        inp = oxpy.InputFile()
+        inp.init_from_filename("input_mc2_tr")
+        inp["list_type"] = "no"
+        inp["conf_file"] = "duplex_overlap.dat"
+        inp["max_backbone_force"] = "100"
+        inp["max_backbone_force_far"] = "10"
+        inp["frozen_exc_volume_scale"] = str(scale)
+        inp["log_file"] = "log_scale.dat"
+        manager = oxpy.OxpyManager(inp)
+        ci = manager.config_info()
+        ps = ci.particles()
+        E = manager.system_energy()
+        ev = 0.0
+        for p in ps:
+            for q in ps:
+                if p.index < q.index and p.frozen != q.frozen and not p.is_bonded(q):
+                    ev += ci.interaction.pair_interaction_term(3, p, q)
+        del manager
+    return E, ev
+
+E1, ev1 = excvol_energies(1.0)
+E05, ev05 = excvol_energies(0.5)
+record("exc_volume_scale_energy_identity", ev1 > 1.0 and abs(ev05 - 0.5 * ev1) < 1e-9 * ev1 and abs((E1 - E05) - 0.5 * ev1) < 1e-9 * ev1, "frozen-movable excvol %.6f -> %.6f, dE_system %.6f" % (ev1, ev05, E1 - E05))
+
 with open("frozen_results.dat", "w") as f:
     f.write("\n".join(results) + "\n")

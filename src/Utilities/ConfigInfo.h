@@ -146,6 +146,9 @@ public:
 	/// if true, nonbonded interactions between two frozen particles are not evaluated either
 	bool skip_frozen_nonbonded = false;
 
+	/// factor applied to the repulsive excluded-volume terms between a frozen and a movable particle (1 = the model; < 1 softens the frozen boundary, used only to prepare initial configurations)
+	number frozen_exc_volume_scale = 1.;
+
 	input_file *sim_input = nullptr;
 };
 

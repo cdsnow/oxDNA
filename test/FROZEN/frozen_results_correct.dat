@@ -21,3 +21,4 @@ skip_bonded_energy_identity PASS
 skip_bonded_distorted_without_option_refused_or_huge PASS
 skip_nonbonded_energy_identity PASS
 skip_bonded_distorted_finite_and_frozen_preserved PASS
+exc_volume_scale_energy_identity PASS

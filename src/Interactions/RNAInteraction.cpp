@@ -666,6 +666,23 @@ number RNAInteraction::_stacking(BaseParticle *p, BaseParticle *q, bool compute_
 }
 
 number RNAInteraction::_nonbonded_excluded_volume(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces) {
+	number scale = CONFIG_INFO->frozen_exc_volume_scale;
+	if(scale == 1. || p->frozen == q->frozen) {
+		return _nonbonded_excluded_volume_raw(p, q, compute_r, update_forces);
+	}
+	// frozen-movable pair with a scaled excluded volume: scale the energy and the force/torque increments
+	LR_vector fp = p->force, fq = q->force, tp = p->torque, tq = q->torque;
+	number energy = scale * _nonbonded_excluded_volume_raw(p, q, compute_r, update_forces);
+	if(update_forces) {
+		p->force = fp + scale * (p->force - fp);
+		q->force = fq + scale * (q->force - fq);
+		p->torque = tp + scale * (p->torque - tp);
+		q->torque = tq + scale * (q->torque - tq);
+	}
+	return energy;
+}
+
+number RNAInteraction::_nonbonded_excluded_volume_raw(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces) {
 	if(_are_bonded(p, q)) {
 		return (number) 0.f;
 	}

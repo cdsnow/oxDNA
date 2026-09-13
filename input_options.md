@@ -21,6 +21,9 @@ Core options:
         supported by the VMMC and PT_VMMC backends.
     [frozen_skip_nonbonded_pairs = <bool>]
         same for the nonbonded interactions between two frozen particles.
+    [frozen_exc_volume_scale = <float>]
+        scales the excluded volume between frozen and movable particles
+        (RNA/RNANM only). Not the model: for preparing configurations only.
         if true, particles that leave the simulation box are brought back in
         via periodic boundary conditions. Defaults to true.
     [seed = <int>]

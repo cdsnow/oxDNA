@@ -71,6 +71,7 @@ public:
     number pair_interaction_bonded(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces) override;
     number pair_interaction_nonbonded(BaseParticle *p, BaseParticle *q, bool compute_r, bool update_forces) override;
     number _protein_rna_exc_volume(BaseParticle *p,BaseParticle *q, bool compute_r, bool update_forces);
+    number _protein_rna_exc_volume_raw(BaseParticle *p,BaseParticle *q, bool compute_r, bool update_forces);
     number _protein_rna_repulsive_lj(const LR_vector &r, LR_vector &force, bool update_forces, number &sigma, number &b, number &rstar, number &rcut, number &stiffness);
     void check_input_sanity(std::vector<BaseParticle *> &particles) override;
     void init() override;
